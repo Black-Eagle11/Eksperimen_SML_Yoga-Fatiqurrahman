@@ -1,0 +1,45 @@
+name: Automate Preprocessing
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'preprocessing/**'
+      - 'namadataset_raw/**'
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn mlflow tqdm
+
+      - name: Run Preprocessing Script
+        run: |
+          echo "=== Menjalankan otomatisasi preprocessing ==="
+          python preprocessing/automate_Yoga-Fatiqurrahman.py
+
+      - name: Upload Processed Dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataset_preprocessed
+          path: preprocessing/namadataset_preprocessing/
+
+      - name: Upload Preprocessing Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: preprocessing_report
+          path: preprocessing/reports/
