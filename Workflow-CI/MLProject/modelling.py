@@ -13,13 +13,11 @@ import mlflow.sklearn
 import pandas as pd
 import numpy as np
 import joblib
-
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score,
-    f1_score, roc_auc_score, confusion_matrix
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
+    confusion_matrix
 )
 from sklearn.ensemble import RandomForestClassifier
 
@@ -65,7 +63,6 @@ def train_model(X, y):
 def evaluate(model, X, y, prefix):
     preds = model.predict(X)
     probs = model.predict_proba(X)[:, 1]
-
     return {
         f"{prefix}_accuracy": accuracy_score(y, preds),
         f"{prefix}_precision": precision_score(y, preds),
@@ -77,14 +74,17 @@ def evaluate(model, X, y, prefix):
 
 def main(args):
 
-    # MLflow Project *sudah otomatis membuat run*
-    # jadi tidak boleh start_run() manual lagi
-
     mlflow.set_experiment("Heart Disease — CI Training")
+
+    # === FIX PALING PENTING ===
+    run = mlflow.active_run()
+    if run is None:
+        run = mlflow.start_run()
+
+    print(f"[INFO] Active MLflow Run: {run.info.run_id}")
 
     mlflow.log_param("dataset_dir", args.data_dir)
 
-    # Load dataset
     train_df, val_df, test_df = load_dataset(args.data_dir)
 
     X_train, y_train, imputer, scaler = preprocess(train_df)
@@ -93,30 +93,24 @@ def main(args):
 
     model = train_model(X_train, y_train)
 
-    # Log metrics
     val_metrics, val_cm = evaluate(model, X_val, y_val, "val")
     test_metrics, test_cm = evaluate(model, X_test, y_test, "test")
 
     mlflow.log_metrics(val_metrics)
     mlflow.log_metrics(test_metrics)
 
-    mlflow.log_dict({"val_confusion_matrix": val_cm.tolist()}, "val_cm.json")
-    mlflow.log_dict({"test_confusion_matrix": test_cm.tolist()}, "test_cm.json")
+    mlflow.log_dict({"val_cm": val_cm.tolist()}, "val_cm.json")
+    mlflow.log_dict({"test_cm": test_cm.tolist()}, "test_cm.json")
 
-    # Log model
-    mlflow.sklearn.log_model(
-        sk_model=model,
-        artifact_path="model"
-    )
+    mlflow.sklearn.log_model(model, artifact_path="model")
 
-    # Save imputer & scaler
     joblib.dump(imputer, "imputer.pkl")
     joblib.dump(scaler, "scaler.pkl")
 
     mlflow.log_artifact("imputer.pkl")
     mlflow.log_artifact("scaler.pkl")
 
-    print("\n=== Training selesai tanpa error ===")
+    print("\n=== Training SUCCESS ===")
     print("VAL:", val_metrics)
     print("TEST:", test_metrics)
 
