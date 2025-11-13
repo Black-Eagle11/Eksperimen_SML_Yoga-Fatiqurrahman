@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Heart Disease Modelling — MLflow Project (CI Version)
-Author: Yoga Fatiqurrahman
-"""
-
 import argparse
 import os
 import mlflow
@@ -73,23 +68,25 @@ def evaluate(model, X, y, prefix):
 
 
 def main(args):
-
     mlflow.set_experiment("Heart Disease — CI Training")
 
-    # === FIX PALING PENTING ===
+    # ===========================
+    # FIX UTAMA PALING PENTING
+    # ===========================
     run = mlflow.active_run()
-    if run is None:
-        run = mlflow.start_run()
+    if run:
+        print(f"[INFO] Active MLflow Run from MLflow Project: {run.info.run_id}")
+    else:
+        print("[WARN] Tidak ada active_run dari MLflow Project. Logging tetap dilanjutkan tanpa start_run().")
 
-    print(f"[INFO] Active MLflow Run: {run.info.run_id}")
-
-    mlflow.log_param("dataset_dir", args.data_dir)
-
+    # MULAI TRAINING
     train_df, val_df, test_df = load_dataset(args.data_dir)
 
     X_train, y_train, imputer, scaler = preprocess(train_df)
     X_val, y_val = preprocess_apply(val_df, imputer, scaler)
     X_test, y_test = preprocess_apply(test_df, imputer, scaler)
+
+    mlflow.log_param("dataset_dir", args.data_dir)
 
     model = train_model(X_train, y_train)
 
@@ -110,7 +107,7 @@ def main(args):
     mlflow.log_artifact("imputer.pkl")
     mlflow.log_artifact("scaler.pkl")
 
-    print("\n=== Training SUCCESS ===")
+    print("\n=== CI TRAINING SUCCESS ===")
     print("VAL:", val_metrics)
     print("TEST:", test_metrics)
 
