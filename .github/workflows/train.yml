@@ -42,7 +42,7 @@ jobs:
       - name: Run MLflow Project (Training)
         run: |
           cd Workflow-CI/MLProject
-          mlflow run . -P data_dir="namadataset_preprocessing"
+          mlflow run . --no-conda -P data_dir="namadataset_preprocessing"
 
       - name: Upload Model Artifacts
         uses: actions/upload-artifact@v4
