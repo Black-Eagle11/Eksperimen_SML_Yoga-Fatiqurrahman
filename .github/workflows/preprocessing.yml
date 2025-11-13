@@ -1,4 +1,4 @@
-# Triggered manually to test workflow
+# Triggered manually or on push to preprocessing/raw folders
 name: Automate Preprocessing (Yoga Fatiqurrahman)
 
 on:
@@ -26,7 +26,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/*.py') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -51,7 +51,7 @@ jobs:
             --val_size 0.20 \
             --test_size 0.20
 
-      - name: Upload Processed Dataset
+      - name: Upload Processed Dataset as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: dataset_preprocessed
@@ -65,18 +65,18 @@ jobs:
           path: preprocessing/reports/
           if-no-files-found: error
 
-      - name: Commit Updated Dataset to Repo (Git LFS)
+      - name: Commit Updated Dataset to Repo
         run: |
           echo "Meng-commit dataset hasil preprocessing ..."
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git lfs install
           git add preprocessing/namadataset_preprocessing/*
-          git commit -m "Update: hasil preprocessing otomatis ($(date))" || echo "Tidak ada perubahan."
+          git commit -m "Auto-update preprocessing ($(date))" || echo "Tidak ada perubahan."
           git push origin ${{ github.ref }}
 
       - name: Workflow Summary
         run: |
-          echo " Workflow selesai tanpa error"
-          echo " Dataset preprocessed berhasil diunggah dan di-commit ke repository"
-          echo " Run Timestamp : $(date)"
+          echo "=== Workflow selesai tanpa error ==="
+          echo "Dataset + report berhasil diunggah ke artifact"
+          echo "Commit berjalan normal jika ada perubahan"
+          echo "Timestamp : $(date)"
