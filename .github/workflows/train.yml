@@ -20,7 +20,7 @@ jobs:
       MLFLOW_TRACKING_URI: file://${{ github.workspace }}/Workflow-CI/MLProject/mlruns
       DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
       DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
-      DOCKER_IMAGE_NAME: "yoga-heart-disease-ci"
+      DOCKER_IMAGE_NAME: "yogarahman-heart-disease-ci"
       PYTHON_VERSION: "3.12"
 
     steps:
@@ -39,10 +39,26 @@ jobs:
           pip install mlflow==2.19.0
           pip install -r Workflow-CI/MLProject/requirements_ci.txt
 
+      - name: Show Working Directory & Files (Debug)
+        run: |
+          echo "== Current Dir =="
+          pwd
+          echo "== Listing Files =="
+          ls -R .
+
       - name: Run MLflow Project (Training)
         run: |
           cd Workflow-CI/MLProject
+          echo "== Running MLflow Project =="
           mlflow run . --no-conda -P data_dir="namadataset_preprocessing"
+
+      - name: Locate Trained Model
+        id: find_model
+        run: |
+          echo "== Searching artifacts/model folder =="
+          MODEL_PATH=$(find Workflow-CI/MLProject/mlruns -type d -path "*/artifacts/model" | head -n 1)
+          echo "Model Path: $MODEL_PATH"
+          echo "MODEL_PATH=$MODEL_PATH" >> $GITHUB_ENV
 
       - name: Upload Model Artifacts
         uses: actions/upload-artifact@v4
@@ -55,29 +71,31 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-
           git add Workflow-CI/MLProject/mlruns || true
           git commit -m "Auto retrain: model terbaru ($(date))" || echo "Tidak ada perubahan."
           git push origin main || echo "Tidak bisa push."
 
       - name: Docker Login
         run: |
-          echo "${{ env.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
+          echo "${{ env.DOCKER_HUB_PASSWORD }}" | docker login \
+            -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
 
       - name: Build Docker Image (MLflow)
         run: |
           cd Workflow-CI/MLProject
-          mlflow models build-docker -m mlruns/*/*/artifacts/model \
-            -n ${{ env.DOCKER_IMAGE_NAME }}
+          echo "== Building Docker Image =="
+          mlflow models build-docker -m $MODEL_PATH -n ${{ env.DOCKER_IMAGE_NAME }}
 
       - name: Push Docker Image
         run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }} ${{ env.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-          docker push ${{ env.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          docker tag ${{ env.DOCKER_IMAGE_NAME }} \
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          docker push \
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
 
       - name: Workflow Summary
         run: |
           echo "=== Workflow Completed ==="
-          echo "Model retrained successfully"
-          echo "Docker image pushed to Docker Hub"
+          echo "Model retrained successfully!"
+          echo "Docker image pushed to Docker Hub!"
           echo "Timestamp: $(date)"
