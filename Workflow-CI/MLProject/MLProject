@@ -5,30 +5,8 @@ conda_env: conda.yaml
 entry_points:
   main:
     parameters:
-      train_path:
-        type: str
-        default: "namadataset_preprocessing/train.csv"
-
-      val_path:
-        type: str
-        default: "namadataset_preprocessing/val.csv"
-
-      test_path:
-        type: str
-        default: "namadataset_preprocessing/test.csv"
-
-      model_out:
-        type: str
-        default: "artifact_model"
-
-      seed:
-        type: int
-        default: 42
+      data_dir: {type: str, default: "namadataset_preprocessing"}
 
     command: >
       python modelling.py
-      --train_path {train_path}
-      --val_path {val_path}
-      --test_path {test_path}
-      --model_out {model_out}
-      --seed {seed}
+      --data_dir {data_dir}
