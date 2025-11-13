@@ -50,7 +50,7 @@ jobs:
         run: |
           cd Workflow-CI/MLProject
           echo "== Running MLflow Project =="
-          mlflow run . --no-conda -P data_dir="namadataset_preprocessing"
+          mlflow run . --env-manager=local -P data_dir="namadataset_preprocessing"
 
       - name: Locate Trained Model
         id: find_model
