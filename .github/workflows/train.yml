@@ -1,4 +1,4 @@
-name: CI Retrain Model (Yoga Fatiqurrahman)
+name: CI_Retrain_Model (Yoga Fatiqurrahman)
 
 on:
   push:
