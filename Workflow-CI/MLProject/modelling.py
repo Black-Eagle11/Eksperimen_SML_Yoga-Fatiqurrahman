@@ -68,52 +68,52 @@ def evaluate(model, X, y, prefix):
 
 
 def main(args):
-    mlflow.set_experiment("Heart Disease — CI Training")
-
-    # ===========================
-    # FIX UTAMA PALING PENTING
-    # ===========================
+    # MLflow Project sudah membuat run sendiri, jadi kita pakai run aktif
     run = mlflow.active_run()
     if run:
-        print(f"[INFO] Active MLflow Run from MLflow Project: {run.info.run_id}")
+        print(f"[INFO] Active run detected: {run.info.run_id}")
+        run_id = run.info.run_id
     else:
-        print("[WARN] Tidak ada active_run dari MLflow Project. Logging tetap dilanjutkan tanpa start_run().")
+        print("[ERROR] Tidak ada active_run dari MLflow Project.")
+        print("Hentikan workflow dan periksa MLproject file.")
+        return
 
-    # MULAI TRAINING
+    # Mulai proses training
     train_df, val_df, test_df = load_dataset(args.data_dir)
 
     X_train, y_train, imputer, scaler = preprocess(train_df)
     X_val, y_val = preprocess_apply(val_df, imputer, scaler)
     X_test, y_test = preprocess_apply(test_df, imputer, scaler)
 
-    mlflow.log_param("dataset_dir", args.data_dir)
+    # Logging manual tanpa start_run()
+    client = mlflow.tracking.MlflowClient()
+
+    client.log_param(run_id, "dataset_dir", args.data_dir)
 
     model = train_model(X_train, y_train)
 
     val_metrics, val_cm = evaluate(model, X_val, y_val, "val")
     test_metrics, test_cm = evaluate(model, X_test, y_test, "test")
 
-    mlflow.log_metrics(val_metrics)
-    mlflow.log_metrics(test_metrics)
+    # log metrics
+    for k, v in val_metrics.items():
+        client.log_metric(run_id, k, float(v))
 
-    mlflow.log_dict({"val_cm": val_cm.tolist()}, "val_cm.json")
-    mlflow.log_dict({"test_cm": test_cm.tolist()}, "test_cm.json")
+    for k, v in test_metrics.items():
+        client.log_metric(run_id, k, float(v))
+
+    # save artifacts
+    joblib.dump(imputer, "imputer.pkl")
+    joblib.dump(scaler, "scaler.pkl")
+    client.log_artifact(run_id, "imputer.pkl")
+    client.log_artifact(run_id, "scaler.pkl")
 
     mlflow.sklearn.log_model(model, artifact_path="model")
 
-    joblib.dump(imputer, "imputer.pkl")
-    joblib.dump(scaler, "scaler.pkl")
-
-    mlflow.log_artifact("imputer.pkl")
-    mlflow.log_artifact("scaler.pkl")
+    # confusion matrix
+    client.log_dict(run_id, {"val_cm": val_cm.tolist()}, "val_cm.json")
+    client.log_dict(run_id, {"test_cm": test_cm.tolist()}, "test_cm.json")
 
     print("\n=== CI TRAINING SUCCESS ===")
     print("VAL:", val_metrics)
     print("TEST:", test_metrics)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", type=str, required=True)
-    args = parser.parse_args()
-    main(args)
