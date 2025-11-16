@@ -39,11 +39,6 @@ from joblib import Parallel, delayed
 import mlflow
 
 
-# ----------------------------------------------------------------------
-# Utility & helper functions
-# ----------------------------------------------------------------------
-
-
 def setup_logger() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -373,11 +368,6 @@ def parallel_fillna(df: pd.DataFrame, n_jobs: int = -1) -> pd.DataFrame:
         return df
 
 
-# ----------------------------------------------------------------------
-# Config & main run
-# ----------------------------------------------------------------------
-
-
 @dataclass
 class Config:
     raw_dir: Path
@@ -396,7 +386,6 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
     cfg.out_dir.mkdir(parents=True, exist_ok=True)
     cfg.report_dir.mkdir(parents=True, exist_ok=True)
 
-    # Default MLflow tracking URI: local mlruns di folder project
     if tracking_uri is None:
         base_dir = Path(__file__).resolve().parents[1]
         mlruns_dir = (base_dir / "mlruns").resolve()
@@ -414,18 +403,12 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
     except Exception as e:
         logging.warning(f"Melewati error saat menutup run lama: {e}")
 
-    # ------------------------------------------------------------------
-    # MLflow run
-    # ------------------------------------------------------------------
     with mlflow.start_run(run_name="Yoga_Fatiqurrahman_Preprocessing"):
         mlflow.set_tag("author", "Yoga Fatiqurrahman")
         mlflow.set_tag("project", "Heart Disease — Automated Preprocessing")
         mlflow.log_param("git_commit", os.getenv("GITHUB_SHA", "local_run"))
         mlflow.log_param("run_env", platform.system())
 
-        # --------------------------------------------------------------
-        # Load raw dataset
-        # --------------------------------------------------------------
         logging.info("Memuat dataset mentah ...")
 
         if not cfg.raw_dir.exists():
@@ -452,9 +435,6 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
             f"Jumlah data awal       : {df.shape[0]} baris × {df.shape[1]} kolom"
         )
 
-        # --------------------------------------------------------------
-        # Cleaning: duplicates & missing values
-        # --------------------------------------------------------------
         logging.info("Membersihkan data ...")
         dups = int(df.duplicated().sum())
         if dups:
@@ -468,9 +448,6 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
         else:
             logging.info("Tidak ada nilai kosong")
 
-        # --------------------------------------------------------------
-        # Target, fitur numerik, dan balancing
-        # --------------------------------------------------------------
         target_col = infer_target_col(df)
         y = df[target_col].astype(int).to_numpy()
         X_full = df.drop(columns=[target_col]).copy()
@@ -498,15 +475,11 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
         for cls, cnt in class_counts_before.items():
             mlflow.log_metric(f"class_count_before_{cls}", float(cnt))
 
-        # Balancing
         X_bal, y_bal = balance_dataset(X, y, method="up", seed=cfg.seed)
         class_counts_after = pd.Series(y_bal).value_counts().to_dict()
         for cls, cnt in class_counts_after.items():
             mlflow.log_metric(f"class_count_after_{cls}", float(cnt))
 
-        # --------------------------------------------------------------
-        # Split 60/20/20 + imputation + scaling
-        # --------------------------------------------------------------
         X_train, X_val, X_test, y_train, y_val, y_test = split_60_20_20(
             X_bal,
             y_bal,
@@ -534,9 +507,6 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
         val_df[target_col] = y_val
         test_df[target_col] = y_test
 
-        # --------------------------------------------------------------
-        # Save outputs (CSV, scaler, imputer, schema, meta)
-        # --------------------------------------------------------------
         train_path = cfg.out_dir / "train.csv"
         val_path = cfg.out_dir / "val.csv"
         test_path = cfg.out_dir / "test.csv"
@@ -566,7 +536,6 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
         logging.info(f"Data uji tersimpan     : {test_path}")
         logging.info(f"Simpan scaler/imputer  : {scaler_path} | {imputer_path}")
 
-        # Laporan ringkas preprocessing
         report = {
             "source_csv": str(raw_path).replace("\\", "/"),
             "source_sha256": raw_sha256,
@@ -602,9 +571,6 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
 
         logging.info(f"Laporan preprocessing  : {report_path}")
 
-        # --------------------------------------------------------------
-        # Log artifact & metadata ke MLflow
-        # --------------------------------------------------------------
         save_metadata_yaml(
             raw_path=raw_path,
             cfg=cfg,
@@ -622,7 +588,6 @@ def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
         except Exception as e:
             logging.warning(f"Gagal log artefak utama ke MLflow: {e}")
 
-        # Validasi akhir
         assert (
             train_df.shape[0] > 0
             and val_df.shape[0] > 0

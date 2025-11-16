@@ -1,8 +1,6 @@
-name: heart-disease-ml-ci
+name: heart-disease-env
 channels:
-  - conda-forge
   - defaults
-
 dependencies:
   - python=3.12
   - pip
@@ -10,6 +8,5 @@ dependencies:
       - numpy
       - pandas
       - scikit-learn
-      - mlflow
+      - mlflow==2.19.0
       - joblib
-      - pyyaml
