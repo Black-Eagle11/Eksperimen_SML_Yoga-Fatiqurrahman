@@ -1,4 +1,4 @@
-name: CI_Retrain_Model (Yoga Fatiqurrahman)
+name: CI_Retrain_Modell (Yoga Fatiqurrahman)
 
 on:
   push:
@@ -48,10 +48,11 @@ jobs:
 
       - name: Run MLflow Project (Training)
         run: |
+          set -o pipefail
           cd Workflow-CI/MLProject
           echo "== Running MLflow Project =="
-          mlflow run . --env-manager=local -P data_dir="namadataset_preprocessing"
-      
+          mlflow run . --env-manager=local -P data_dir="namadataset_preprocessing" 2>&1 | tee full_error.log
+
       - name: Print MLflow Run List
         run: |
           echo "== List MLflow runs =="
