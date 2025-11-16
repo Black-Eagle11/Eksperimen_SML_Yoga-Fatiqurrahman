@@ -55,7 +55,7 @@ jobs:
       - name: Print MLflow Run List
         run: |
           echo "== List MLflow runs =="
-          mlflow runs list --experiment-name "Heart Disease — CI Training"
+          mlflow runs list
 
       - name: Locate Trained Model
         id: find_model
