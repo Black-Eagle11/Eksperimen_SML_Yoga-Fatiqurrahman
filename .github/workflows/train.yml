@@ -92,7 +92,9 @@ jobs:
         run: |
           cd Workflow-CI/MLProject
           echo "== Building Docker Image =="
-          mlflow models build-docker -m $MODEL_PATH -t ${{ env.DOCKER_IMAGE_NAME }}
+          mlflow models build-docker \
+          --model-uri $MODEL_PATH \
+          --name ${{ env.DOCKER_IMAGE_NAME }}
 
       - name: Push Docker Image
         run: |
