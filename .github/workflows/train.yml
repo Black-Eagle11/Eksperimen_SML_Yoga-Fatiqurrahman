@@ -88,14 +88,26 @@ jobs:
           echo "${{ env.DOCKER_HUB_PASSWORD }}" | docker login \
             -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
 
+      - name: Locate Trained Model
+        id: find_model
+        run: |
+          MODEL_PATH=$(find Workflow-CI/MLProject/mlruns -type d -name "model" | sort | tail -n 1)
+          echo "MODEL_PATH=$MODEL_PATH" >> $GITHUB_ENV
+          echo "FOUND MODEL: $MODEL_PATH"
+
       - name: Build Docker Image (MLflow)
         run: |
-          cd $MODEL_PATH
+          echo "== MODEL_PATH FOUND =="
+          echo $MODEL_PATH
+
           echo "== Generating Dockerfile via MLflow =="
-          mlflow models build-docker --model-uri $MODEL_PATH --enable-mlserver
+          mlflow models build-docker \
+            --model-uri "$MODEL_PATH" \
+            --enable-mlserver
 
           echo "== Building Docker Image =="
-          docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
+          docker build -t ${{ env.DOCKER_IMAGE_NAME }} "$MODEL_PATH"
+
 
       - name: Push Docker Image
         run: |
