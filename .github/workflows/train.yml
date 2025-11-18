@@ -3,7 +3,6 @@ name: CI_Retrain_Model (Yoga Fatiqurrahman)
 on:
   push:
     branches: [main]
-
   workflow_dispatch:
 
 jobs:
@@ -23,7 +22,6 @@ jobs:
       PYTHON_VERSION: "3.12"
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -38,35 +36,28 @@ jobs:
           pip install mlflow==2.19.0
           pip install -r Workflow-CI/MLProject/requirements_ci.txt
 
-      - name: Show Working Directory & Files (Debug)
+      - name: Show Working Directory & Files
         run: |
-          echo "== Current Dir =="
-          pwd
-          echo "== Listing Files =="
-          ls -R .
+          echo "== Current Dir ==" && pwd
+          echo "== Listing Files ==" && ls -R .
 
       - name: Run MLflow Project (Training)
         run: |
-          set -o pipefail
           cd Workflow-CI/MLProject
           echo "== Running MLflow Project =="
           mlflow run . --env-manager=local -P data_dir="namadataset_preprocessing" 2>&1 | tee full_error.log
 
-      - name: Print MLflow Run List
+      - name: Print MLflow Runs
         run: |
-          echo "== List MLflow experiments =="
           mlflow experiments search
-
-          echo "== List runs for experiment 0 =="
           mlflow runs list --experiment-id 0
 
-      - name: Locate Trained Model
-        id: find_model
+      - name: Locate Model (First Pass)
+        id: find_model_first
         run: |
-          echo "== Searching artifacts/model folder =="
           MODEL_PATH=$(find Workflow-CI/MLProject/mlruns -type d -path "*/artifacts/model" | head -n 1)
-          echo "Model Path: $MODEL_PATH"
           echo "MODEL_PATH=$MODEL_PATH" >> $GITHUB_ENV
+          echo "FOUND FIRST MODEL: $MODEL_PATH"
 
       - name: Upload Model Artifacts
         uses: actions/upload-artifact@v4
@@ -88,31 +79,30 @@ jobs:
           echo "${{ env.DOCKER_HUB_PASSWORD }}" | docker login \
             -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
 
-      - name: Locate Trained Model
-        id: find_model
+      - name: Locate Model (Latest)
+        id: find_model_latest
         run: |
           MODEL_PATH=$(find Workflow-CI/MLProject/mlruns -type d -name "model" | sort | tail -n 1)
           echo "MODEL_PATH=$MODEL_PATH" >> $GITHUB_ENV
-          echo "FOUND MODEL: $MODEL_PATH"
+          echo "FOUND LATEST MODEL: $MODEL_PATH"
 
-      - name: Build Docker Image (MLflow)
+      - name: Build Docker Image via MLflow
         run: |
-          echo "== MODEL_PATH FOUND =="
+          echo "== MODEL_PATH =="
           echo $MODEL_PATH
 
-          echo "== Generating Dockerfile via MLflow =="
           mlflow models build-docker \
             --model-uri "$MODEL_PATH" \
             --enable-mlserver
 
-          echo "== Building Docker Image =="
           docker build -t ${{ env.DOCKER_IMAGE_NAME }} "$MODEL_PATH"
-
 
       - name: Push Docker Image
         run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }} \
+          docker tag \
+            ${{ env.DOCKER_IMAGE_NAME }} \
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+
           docker push \
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
 
@@ -121,4 +111,3 @@ jobs:
           echo "=== Workflow Completed ==="
           echo "Model retrained successfully!"
           echo "Docker image pushed to Docker Hub!"
-          echo "Timestamp: $(date)"
