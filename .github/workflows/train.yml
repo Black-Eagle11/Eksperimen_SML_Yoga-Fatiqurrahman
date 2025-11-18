@@ -55,7 +55,7 @@ jobs:
       - name: Print MLflow Run List
         run: |
           echo "== List MLflow experiments =="
-          mlflow experiments
+          mlflow experiments search
 
           echo "== List runs for experiment 0 =="
           mlflow runs list -e 0
