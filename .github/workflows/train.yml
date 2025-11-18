@@ -55,10 +55,10 @@ jobs:
       - name: Print MLflow Run List
         run: |
           echo "== List MLflow experiments =="
-          mlflow experiments list
+          mlflow experiments
 
           echo "== List runs for experiment 0 =="
-          mlflow runs list --experiment-id 0
+          mlflow runs list -e 0
 
       - name: Locate Trained Model
         id: find_model
