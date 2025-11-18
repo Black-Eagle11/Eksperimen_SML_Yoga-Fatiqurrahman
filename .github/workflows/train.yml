@@ -3,7 +3,6 @@ name: CI_Retrain_Model (Yoga Fatiqurrahman)
 on:
   push:
     branches: [main]
-
   workflow_dispatch:
 
 jobs:
@@ -32,13 +31,21 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Dependencies
+      - name: Create Virtual Environment + Install Dependencies
         run: |
+          python -m venv venv
+          source venv/bin/activate
           pip install --upgrade pip
           pip install mlflow==2.19.0
           pip install -r Workflow-CI/MLProject/requirements_ci.txt
+          echo "source venv/bin/activate" >> $GITHUB_ENV
 
-      - name: Show Working Directory & Files (Debug)
+      - name: Check MLflow Version
+        run: |
+          source venv/bin/activate
+          mlflow --version
+
+      - name: Show Working Directory & Files
         run: |
           echo "== Current Dir =="
           pwd
@@ -47,13 +54,14 @@ jobs:
 
       - name: Run MLflow Project (Training)
         run: |
-          set -o pipefail
+          source venv/bin/activate
           cd Workflow-CI/MLProject
           echo "== Running MLflow Project =="
-          mlflow run . --env-manager=local -P data_dir="namadataset_preprocessing" 2>&1 | tee full_error.log
+          mlflow run . --env-manager=local -P data_dir="namadataset_preprocessing"
 
       - name: Print MLflow Run List
         run: |
+          source venv/bin/activate
           echo "== List MLflow experiments =="
           mlflow experiments search
 
@@ -66,9 +74,15 @@ jobs:
           echo "== Searching artifacts/model folder =="
           MODEL_PATH=$(find Workflow-CI/MLProject/mlruns -type d -path "*/artifacts/model" | head -n 1)
           echo "Model Path: $MODEL_PATH"
+
+          if [ -z "$MODEL_PATH" ]; then
+            echo "ERROR: Model artifact not found!"
+            exit 1
+          fi
+
           echo "MODEL_PATH=$MODEL_PATH" >> $GITHUB_ENV
 
-      - name: Upload Model Artifacts
+      - name: Upload MLflow Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mlflow_artifacts
@@ -90,16 +104,18 @@ jobs:
 
       - name: Build Docker Image (MLflow)
         run: |
+          source venv/bin/activate
           cd Workflow-CI/MLProject
           echo "== Building Docker Image =="
           mlflow models build-docker \
-          --model-uri $MODEL_PATH \
-          --name ${{ env.DOCKER_IMAGE_NAME }}
+            --model-uri $MODEL_PATH \
+            --name ${{ env.DOCKER_IMAGE_NAME }}
 
       - name: Push Docker Image
         run: |
           docker tag ${{ env.DOCKER_IMAGE_NAME }} \
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+
           docker push \
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
 
