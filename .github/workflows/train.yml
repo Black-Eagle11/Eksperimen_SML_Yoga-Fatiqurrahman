@@ -58,7 +58,7 @@ jobs:
           mlflow experiments search
 
           echo "== List runs for experiment 0 =="
-          mlflow runs list -e 0
+          mlflow runs list --experiment-id 0
 
       - name: Locate Trained Model
         id: find_model
