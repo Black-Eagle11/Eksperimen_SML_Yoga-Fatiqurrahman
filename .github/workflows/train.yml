@@ -52,7 +52,7 @@ jobs:
           echo "== Running MLflow Project =="
           mlflow run . --env-manager=local -P data_dir="namadataset_preprocessing" 2>&1 | tee full_error.log
 
-      - name: Print MLflow Run List
+      - name: Print MLflow Runs
         run: |
           echo "== List MLflow experiments =="
           mlflow experiments search
@@ -67,6 +67,11 @@ jobs:
           MODEL_PATH=$(find Workflow-CI/MLProject/mlruns -type d -path "*/artifacts/model" | head -n 1)
           echo "Model Path: $MODEL_PATH"
           echo "MODEL_PATH=$MODEL_PATH" >> $GITHUB_ENV
+
+          if [ -z "$MODEL_PATH" ]; then
+            echo "ERROR: Model artifact not found! Pastikan modelling.py melakukan mlflow.log_model(model, 'model')"
+            exit 1
+          fi
 
       - name: Upload Model Artifacts
         uses: actions/upload-artifact@v4
@@ -92,7 +97,9 @@ jobs:
         run: |
           cd Workflow-CI/MLProject
           echo "== Building Docker Image =="
-          mlflow models build-docker -m $MODEL_PATH -n ${{ env.DOCKER_IMAGE_NAME }}
+          mlflow models build-docker \
+            --model-uri $MODEL_PATH \
+            --name ${{ env.DOCKER_IMAGE_NAME }}
 
       - name: Push Docker Image
         run: |
