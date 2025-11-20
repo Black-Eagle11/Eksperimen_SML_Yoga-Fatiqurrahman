@@ -5,6 +5,11 @@
 Automated preprocessing — Heart Disease (tabular, binary)
 Author  : Yoga Fatiqurrahman
 License : MIT
+<<<<<<< HEAD
+=======
+Notes   : Cross-platform (Windows/Linux/Colab).
+          Compatible with Dicoding SMSML (Kriteria 1 Skilled/Advanced).
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
 """
 
 import os
@@ -34,6 +39,11 @@ from sklearn.utils import resample
 import joblib
 from joblib import Parallel, delayed
 
+<<<<<<< HEAD
+=======
+import mlflow
+
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
 
 def setup_logger() -> None:
     logging.basicConfig(
@@ -193,8 +203,20 @@ def balance_dataset(
     X_bal = df_balanced.drop(columns=["target"])
 
     dist_after = pd.Series(y_bal).value_counts(normalize=True).to_dict()
+<<<<<<< HEAD
     logging.info(f"{action} selesai → distribusi baru: {dist_after}")
 
+=======
+    ratio_after = min(dist_after.values()) / max(dist_after.values())
+    logging.info(f"{action} selesai → distribusi baru: {dist_after}")
+
+    try:
+        mlflow.log_metric("class_balance_ratio_before", float(imbalance_ratio))
+        mlflow.log_metric("class_balance_ratio_after", float(ratio_after))
+    except Exception as e:
+        logging.warning(f"Gagal mencatat metrik balancing ke MLflow: {e}")
+
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
     return X_bal, y_bal
 
 
@@ -203,6 +225,10 @@ def save_metadata_yaml(
     cfg: "Config",
     schema: Dict[str, str],
     feature_names: List[str],
+<<<<<<< HEAD
+=======
+    tracking_uri: str,
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
     report_dir: Path,
 ) -> Path:
     logging.info("Menyimpan metadata preprocessing ke metadata.yaml ...")
@@ -225,6 +251,10 @@ def save_metadata_yaml(
             "python_version": platform.python_version(),
             "hostname": socket.gethostname(),
             "user": getpass.getuser(),
+<<<<<<< HEAD
+=======
+            "tracking_uri": tracking_uri,
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
         },
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -233,7 +263,16 @@ def save_metadata_yaml(
     with open(yaml_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(metadata, f, sort_keys=False, allow_unicode=True)
 
+<<<<<<< HEAD
     logging.info("metadata.yaml berhasil disimpan.")
+=======
+    try:
+        mlflow.log_artifact(str(yaml_path))
+        logging.info("metadata.yaml berhasil disimpan dan di-log ke MLflow.")
+    except Exception as e:
+        logging.warning(f"Gagal log metadata.yaml ke MLflow: {e}")
+
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
     return yaml_path
 
 
@@ -268,7 +307,19 @@ def quick_profile(df: pd.DataFrame, out_path: Path, sample_limit: int = 5000) ->
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(profile, f, indent=2, ensure_ascii=False)
 
+<<<<<<< HEAD
     logging.info("Profil dataset berhasil dibuat.")
+=======
+    try:
+        mlflow.log_artifact(str(json_path))
+        mlflow.log_metric("n_rows", int(df.shape[0]))
+        mlflow.log_metric("n_columns", int(df.shape[1]))
+        mlflow.log_metric("missing_values_total", int(df.isnull().sum().sum()))
+        logging.info("Profil dataset berhasil dibuat & di-log ke MLflow.")
+    except Exception as e:
+        logging.warning(f"Gagal log profil ke MLflow: {e}")
+
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
     return json_path
 
 
@@ -302,6 +353,15 @@ def parallel_fillna(df: pd.DataFrame, n_jobs: int = -1) -> pd.DataFrame:
         logging.info(f"Durasi pengisian: {duration:.3f} detik")
         logging.info(f"Jumlah nilai kosong yang diisi: {missing_filled}")
 
+<<<<<<< HEAD
+=======
+        try:
+            mlflow.log_metric("fillna_duration_sec", duration)
+            mlflow.log_metric("missing_values_filled", missing_filled)
+        except Exception as e:
+            logging.warning(f"Gagal mencatat metrik fillna ke MLflow: {e}")
+
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
         return df_filled
 
     except Exception as e:
@@ -326,7 +386,16 @@ def parallel_fillna(df: pd.DataFrame, n_jobs: int = -1) -> pd.DataFrame:
         logging.info(
             f"Fallback fillna selesai dalam {duration:.3f} detik (mode normal)."
         )
+<<<<<<< HEAD
         logging.info(f"Jumlah nilai kosong yang diisi (fallback): {missing_filled}")
+=======
+
+        try:
+            mlflow.log_metric("fillna_duration_sec_fallback", duration)
+            mlflow.log_metric("missing_values_filled_fallback", missing_filled)
+        except Exception:
+            pass
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
 
         return df
 
@@ -341,7 +410,11 @@ class Config:
     test_size: float = 0.20
 
 
+<<<<<<< HEAD
 def run(cfg: Config) -> None:
+=======
+def run(cfg: Config, tracking_uri: Optional[str] = None) -> None:
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
     t0 = time.time()
     setup_logger()
     set_global_seed(cfg.seed)
@@ -349,6 +422,7 @@ def run(cfg: Config) -> None:
     cfg.out_dir.mkdir(parents=True, exist_ok=True)
     cfg.report_dir.mkdir(parents=True, exist_ok=True)
 
+<<<<<<< HEAD
     logging.info("Memuat dataset mentah ...")
 
     if not cfg.raw_dir.exists():
@@ -510,6 +584,220 @@ def run(cfg: Config) -> None:
     duration = round(time.time() - t0, 3)
     logging.info(f"Durasi preprocessing   : {duration:.3f} s")
     logging.info("Semua dataset hasil split valid dan siap digunakan untuk modelling.")
+=======
+    if tracking_uri is None:
+        base_dir = Path(__file__).resolve().parents[1]
+        mlruns_dir = (base_dir / "mlruns").resolve()
+        mlruns_dir.mkdir(exist_ok=True)
+        tracking_uri = mlruns_dir.as_uri()
+
+    mlflow.set_tracking_uri(tracking_uri)
+    mlflow.set_experiment("Heart Disease — Automate Preprocessing")
+    logging.info(f"MLflow Tracking URI : {tracking_uri}")
+
+    try:
+        if mlflow.active_run():
+            logging.warning("Menutup MLflow run lama yang masih aktif ...")
+            mlflow.end_run()
+    except Exception as e:
+        logging.warning(f"Melewati error saat menutup run lama: {e}")
+
+    with mlflow.start_run(run_name="Yoga_Fatiqurrahman_Preprocessing"):
+        mlflow.set_tag("author", "Yoga Fatiqurrahman")
+        mlflow.set_tag("project", "Heart Disease — Automated Preprocessing")
+        mlflow.log_param("git_commit", os.getenv("GITHUB_SHA", "local_run"))
+        mlflow.log_param("run_env", platform.system())
+
+        logging.info("Memuat dataset mentah ...")
+
+        if not cfg.raw_dir.exists():
+            raise FileNotFoundError(f"Folder tidak ditemukan: {cfg.raw_dir}")
+
+        csv_files = sorted(
+            [p for p in cfg.raw_dir.iterdir() if p.suffix.lower() == ".csv"]
+        )
+        if not csv_files:
+            raise FileNotFoundError(f"Tidak ada file .csv di: {cfg.raw_dir}")
+
+        raw_path = csv_files[0]
+        logging.info(f"File dataset ditemukan : {raw_path}")
+        raw_sha256 = sha256_of_file(raw_path)
+        logging.info(f"SHA256                 : {raw_sha256}")
+
+        df = pd.read_csv(raw_path)
+        n0 = int(len(df))
+
+        validate_schema(df)
+        quick_profile(df, cfg.report_dir)
+
+        logging.info(
+            f"Jumlah data awal       : {df.shape[0]} baris × {df.shape[1]} kolom"
+        )
+
+        logging.info("Membersihkan data ...")
+        dups = int(df.duplicated().sum())
+        if dups:
+            df = df.drop_duplicates().reset_index(drop=True)
+        logging.info(f"Duplikat dihapus       : {dups}")
+
+        missing_total = int(df.isnull().sum().sum())
+        if missing_total > 0:
+            df = parallel_fillna(df)
+            logging.info(f"Nilai kosong ditangani : {missing_total}")
+        else:
+            logging.info("Tidak ada nilai kosong")
+
+        target_col = infer_target_col(df)
+        y = df[target_col].astype(int).to_numpy()
+        X_full = df.drop(columns=[target_col]).copy()
+
+        feat_cols: List[str] = X_full.select_dtypes(include=np.number).columns.tolist()
+        if not feat_cols:
+            raise ValueError("Tidak ada fitur numerik yang ditemukan untuk modelling.")
+
+        X = X_full[feat_cols].copy()
+
+        class_counts_before = pd.Series(y).value_counts().to_dict()
+        mlflow.log_params(
+            {
+                "seed": cfg.seed,
+                "val_size": cfg.val_size,
+                "test_size": cfg.test_size,
+                "rows_before": n0,
+                "rows_after_dropdup": int(len(df)),
+                "n_features_numeric": len(feat_cols),
+                "duplicates_removed": dups,
+                "missing_filled": missing_total,
+                "target_col": target_col,
+            }
+        )
+        for cls, cnt in class_counts_before.items():
+            mlflow.log_metric(f"class_count_before_{cls}", float(cnt))
+
+        X_bal, y_bal = balance_dataset(X, y, method="up", seed=cfg.seed)
+        class_counts_after = pd.Series(y_bal).value_counts().to_dict()
+        for cls, cnt in class_counts_after.items():
+            mlflow.log_metric(f"class_count_after_{cls}", float(cnt))
+
+        X_train, X_val, X_test, y_train, y_val, y_test = split_60_20_20(
+            X_bal,
+            y_bal,
+            seed=cfg.seed,
+            val_frac=cfg.val_size,
+            test_frac=cfg.test_size,
+        )
+
+        imputer = SimpleImputer(strategy="median")
+        scaler = StandardScaler()
+
+        X_train_imp = imputer.fit_transform(X_train)
+        X_val_imp = imputer.transform(X_val)
+        X_test_imp = imputer.transform(X_test)
+
+        X_train_sc = scaler.fit_transform(X_train_imp)
+        X_val_sc = scaler.transform(X_val_imp)
+        X_test_sc = scaler.transform(X_test_imp)
+
+        train_df = pd.DataFrame(X_train_sc, columns=feat_cols)
+        val_df = pd.DataFrame(X_val_sc, columns=feat_cols)
+        test_df = pd.DataFrame(X_test_sc, columns=feat_cols)
+
+        train_df[target_col] = y_train
+        val_df[target_col] = y_val
+        test_df[target_col] = y_test
+
+        train_path = cfg.out_dir / "train.csv"
+        val_path = cfg.out_dir / "val.csv"
+        test_path = cfg.out_dir / "test.csv"
+        meta_path = cfg.out_dir / "meta.json"
+        scaler_path = cfg.out_dir / "scaler.pkl"
+        imputer_path = cfg.out_dir / "imputer.pkl"
+        schema_path = cfg.out_dir / "schema.json"
+        feature_names_path = cfg.out_dir / "feature_names.json"
+        report_path = cfg.report_dir / "preprocessing_report.json"
+
+        train_df.to_csv(train_path, index=False)
+        val_df.to_csv(val_path, index=False)
+        test_df.to_csv(test_path, index=False)
+
+        joblib.dump(scaler, scaler_path)
+        joblib.dump(imputer, imputer_path)
+
+        schema = {c: str(train_df[c].dtype) for c in train_df.columns}
+        with open(schema_path, "w", encoding="utf-8") as f:
+            json.dump(schema, f, indent=2)
+
+        with open(feature_names_path, "w", encoding="utf-8") as f:
+            json.dump({"feature_names_in_order": feat_cols}, f, indent=2)
+
+        logging.info(f"Data latih tersimpan   : {train_path}")
+        logging.info(f"Data validasi tersimpan: {val_path}")
+        logging.info(f"Data uji tersimpan     : {test_path}")
+        logging.info(f"Simpan scaler/imputer  : {scaler_path} | {imputer_path}")
+
+        report = {
+            "source_csv": str(raw_path).replace("\\", "/"),
+            "source_sha256": raw_sha256,
+            "rows_before": n0,
+            "rows_after_dropdup": int(len(df)),
+            "target_col": target_col,
+            "class_distribution_before": class_counts_before,
+            "class_distribution_after": class_counts_after,
+            "split": {
+                "train": int(len(train_df)),
+                "val": int(len(val_df)),
+                "test": int(len(test_df)),
+            },
+            "feature_count": len(feat_cols),
+            "feature_names": feat_cols,
+            "seed": cfg.seed,
+            "duplicates_removed": dups,
+            "missing_filled": missing_total,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "versions": {
+                "python": sys.version.split()[0],
+                "pandas": pd.__version__,
+                "numpy": np.__version__,
+                "scikit_learn": __import__("sklearn").__version__,
+                "mlflow": mlflow.__version__,
+            },
+        }
+
+        with open(report_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+
+        logging.info(f"Laporan preprocessing  : {report_path}")
+
+        save_metadata_yaml(
+            raw_path=raw_path,
+            cfg=cfg,
+            schema=schema,
+            feature_names=feat_cols,
+            tracking_uri=tracking_uri,
+            report_dir=cfg.report_dir,
+        )
+
+        try:
+            mlflow.log_artifacts(str(cfg.out_dir))
+            mlflow.log_artifact(str(report_path))
+            mlflow.log_artifact(str(schema_path))
+            mlflow.log_artifact(str(feature_names_path))
+        except Exception as e:
+            logging.warning(f"Gagal log artefak utama ke MLflow: {e}")
+
+        assert (
+            train_df.shape[0] > 0
+            and val_df.shape[0] > 0
+            and test_df.shape[0] > 0
+        ), "Dataset split tidak valid!"
+
+        duration = round(time.time() - t0, 3)
+        mlflow.log_metric("preprocessing_duration_sec", duration)
+        logging.info(f"Durasi preprocessing   : {duration:.3f} s")
+        logging.info("Semua dataset hasil split valid dan siap digunakan untuk modelling.")
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
 
 
 def parse_args() -> argparse.Namespace:
@@ -538,6 +826,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--val_size", type=float, default=0.20)
     parser.add_argument("--test_size", type=float, default=0.20)
+<<<<<<< HEAD
+=======
+    parser.add_argument(
+        "--tracking_uri",
+        type=str,
+        default=None,
+        help="MLflow tracking URI (opsional, default: mlruns lokal).",
+    )
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
     return parser.parse_args()
 
 
@@ -551,4 +848,8 @@ if __name__ == "__main__":
         val_size=args.val_size,
         test_size=args.test_size,
     )
+<<<<<<< HEAD
     run(cfg)
+=======
+    run(cfg, tracking_uri=args.tracking_uri)
+>>>>>>> 6775961c14cf2615fa9599c519d09c48a6978247
