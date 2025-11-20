@@ -1,0 +1,47 @@
+{
+  "source_csv": "C:/Users/acer/Downloads/SMSML_Yoga-Fatiqurrahman/Eksperimen_SML_Yoga-Fatiqurrahman/namadataset_raw/heart_cleveland_upload.csv",
+  "source_sha256": "386015be85bcc9112cbac782dafd145aeef7abd4f8b9f2ee65f6c4c56ed82d9f",
+  "rows_before": 297,
+  "rows_after_dropdup": 297,
+  "target_col": "condition",
+  "class_distribution_before": {
+    "0": 160,
+    "1": 137
+  },
+  "class_distribution_after": {
+    "0": 160,
+    "1": 137
+  },
+  "split": {
+    "train": 178,
+    "val": 59,
+    "test": 60
+  },
+  "feature_count": 13,
+  "feature_names": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal"
+  ],
+  "seed": 42,
+  "duplicates_removed": 0,
+  "missing_filled": 0,
+  "timestamp": "2025-11-18 23:29:14",
+  "versions": {
+    "python": "3.12.7",
+    "pandas": "2.3.3",
+    "numpy": "2.1.1",
+    "scikit_learn": "1.5.2",
+    "mlflow": "2.19.0"
+  }
+}

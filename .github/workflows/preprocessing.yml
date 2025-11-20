@@ -1,0 +1,82 @@
+# Triggered manually or on push to preprocessing/raw folders
+name: Automate Preprocessing (Yoga Fatiqurrahman)
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'preprocessing/**'
+      - 'namadataset_raw/**'
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      actions: write
+      id-token: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Cache Python Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/*.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn mlflow joblib tqdm pyyaml
+
+      - name: Run Automated Preprocessing
+        run: |
+          echo "=== Preprocessing dimulai ==="
+          python preprocessing/automate_Yoga-Fatiqurrahman.py \
+            --raw_dir "namadataset_raw" \
+            --out_dir "preprocessing/namadataset_preprocessing" \
+            --report_dir "preprocessing/reports" \
+            --seed 42 \
+            --val_size 0.20 \
+            --test_size 0.20
+
+      - name: Upload Processed Dataset as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataset_preprocessed
+          path: preprocessing/namadataset_preprocessing/
+          if-no-files-found: error
+
+      - name: Upload Preprocessing Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: preprocessing_report
+          path: preprocessing/reports/
+          if-no-files-found: error
+
+      - name: Commit Updated Dataset to Repo
+        run: |
+          echo "Meng-commit dataset hasil preprocessing ..."
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add preprocessing/namadataset_preprocessing/*
+          git commit -m "Auto-update preprocessing ($(date))" || echo "Tidak ada perubahan."
+          git push origin ${{ github.ref }}
+
+      - name: Workflow Summary
+        run: |
+          echo "=== Workflow selesai tanpa error ==="
+          echo "Dataset + report berhasil diunggah ke artifact"
+          echo "Commit berjalan normal jika ada perubahan"
+          echo "Timestamp : $(date)"

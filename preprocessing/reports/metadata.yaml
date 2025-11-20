@@ -1,0 +1,44 @@
+dataset_info:
+  source_file: heart_cleveland_upload.csv
+  absolute_path: C:\Users\acer\Downloads\SMSML_Yoga-Fatiqurrahman\Eksperimen_SML_Yoga-Fatiqurrahman\namadataset_raw\heart_cleveland_upload.csv
+  num_features: 13
+  features:
+  - age
+  - sex
+  - cp
+  - trestbps
+  - chol
+  - fbs
+  - restecg
+  - thalach
+  - exang
+  - oldpeak
+  - slope
+  - ca
+  - thal
+  schema:
+    age: float64
+    sex: float64
+    cp: float64
+    trestbps: float64
+    chol: float64
+    fbs: float64
+    restecg: float64
+    thalach: float64
+    exang: float64
+    oldpeak: float64
+    slope: float64
+    ca: float64
+    thal: float64
+    condition: int64
+preprocessing_config:
+  seed: 42
+  val_size: 0.2
+  test_size: 0.2
+environment:
+  os: Windows
+  python_version: 3.12.7
+  hostname: LAPTOP-M8O8488T
+  user: acer
+  tracking_uri: file:///C:/Users/acer/Downloads/SMSML_Yoga-Fatiqurrahman/Eksperimen_SML_Yoga-Fatiqurrahman/mlruns
+timestamp: '2025-11-18 23:29:14'
