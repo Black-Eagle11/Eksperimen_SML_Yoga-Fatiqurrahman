@@ -1,0 +1,47 @@
+{
+  "source_csv": "namadataset_raw/heart_cleveland_upload.csv",
+  "source_sha256": "18f18f1d0a342f3aa6322bf4150fcab0f00fea138debcdc8fbfb0227883607db",
+  "rows_before": 297,
+  "rows_after_dropdup": 297,
+  "target_col": "condition",
+  "class_distribution_before": {
+    "0": 160,
+    "1": 137
+  },
+  "class_distribution_after": {
+    "0": 160,
+    "1": 137
+  },
+  "split": {
+    "train": 178,
+    "val": 59,
+    "test": 60
+  },
+  "feature_count": 13,
+  "feature_names": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal"
+  ],
+  "seed": 42,
+  "duplicates_removed": 0,
+  "missing_filled": 0,
+  "timestamp": "2025-11-18 16:39:17",
+  "versions": {
+    "python": "3.12.12",
+    "pandas": "2.3.3",
+    "numpy": "2.3.5",
+    "scikit_learn": "1.7.2",
+    "mlflow": "3.6.0"
+  }
+}
